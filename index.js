@@ -1,18 +1,18 @@
 console.log("🔥 AFK BOT BAŞLIYOR...");
-console.log("Discord.js sürümü:", require('discord.js').version);
+console.log("Discord.js sürümü:", require("discord.js").version);
 
 const {
     Client,
     GatewayIntentBits,
     Events
-} = require('discord.js');
+} = require("discord.js");
 
 const {
     joinVoiceChannel,
     getVoiceConnection
-} = require('@discordjs/voice');
+} = require("@discordjs/voice");
 
-const http = require('http');
+const http = require("http");
 
 const PORT = process.env.PORT || 3000;
 
@@ -26,17 +26,21 @@ const CHANNEL_ID = process.env.CHANNEL_ID;
 // ======================================
 
 const server = http.createServer((req, res) => {
+
     res.writeHead(200, {
-        'Content-Type': 'text/plain'
+        "Content-Type": "text/plain"
     });
 
-    res.end('AFK BOT aktif');
+    res.end("AFK BOT aktif");
+
 });
 
-server.listen(PORT, '0.0.0.0', () => {
+server.listen(PORT, "0.0.0.0", () => {
+
     console.log(
         `>>> HTTP SUNUCUSU BAŞLADI. Port: ${PORT}`
     );
+
 });
 
 
@@ -45,10 +49,12 @@ server.listen(PORT, '0.0.0.0', () => {
 // ======================================
 
 const client = new Client({
+
     intents: [
         GatewayIntentBits.Guilds,
         GatewayIntentBits.GuildVoiceStates
     ]
+
 });
 
 
@@ -56,7 +62,7 @@ const client = new Client({
 // DISCORD DEBUG
 // ======================================
 
-client.on('debug', (info) => {
+client.on("debug", (info) => {
 
     console.log(
         ">>> DISCORD DEBUG:",
@@ -81,10 +87,10 @@ client.on('debug', (info) => {
 
 
 // ======================================
-// DISCORD UYARILARI
+// DISCORD UYARI
 // ======================================
 
-client.on('warn', (info) => {
+client.on("warn", (info) => {
 
     console.warn(
         ">>> DISCORD UYARI:",
@@ -95,10 +101,10 @@ client.on('warn', (info) => {
 
 
 // ======================================
-// DISCORD HATALARI
+// DISCORD HATA
 // ======================================
 
-client.on('error', (err) => {
+client.on("error", (err) => {
 
     console.error(
         ">>> DISCORD HATASI:",
@@ -112,7 +118,7 @@ client.on('error', (err) => {
 // SHARD EVENTLERİ
 // ======================================
 
-client.on('shardReady', (id) => {
+client.on("shardReady", (id) => {
 
     console.log(
         "🟢 SHARD READY:",
@@ -121,8 +127,7 @@ client.on('shardReady', (id) => {
 
 });
 
-
-client.on('shardError', (error, shardId) => {
+client.on("shardError", (error, shardId) => {
 
     console.error(
         "❌ SHARD ERROR:",
@@ -132,8 +137,7 @@ client.on('shardError', (error, shardId) => {
 
 });
 
-
-client.on('shardDisconnect', (event, shardId) => {
+client.on("shardDisconnect", (event, shardId) => {
 
     console.error(
         "🔴 SHARD DISCONNECT:",
@@ -143,8 +147,7 @@ client.on('shardDisconnect', (event, shardId) => {
 
 });
 
-
-client.on('shardReconnecting', (id) => {
+client.on("shardReconnecting", (id) => {
 
     console.log(
         "🔄 SHARD RECONNECTING:",
@@ -168,18 +171,17 @@ async function sesKanalinaGir() {
         console.log("======================================");
 
 
-        // SUNUCUYU BUL
+        // SUNUCU
 
         const guild =
             await client.guilds.fetch(GUILD_ID);
-
 
         console.log(
             `>>> SUNUCU BULUNDU: ${guild.name}`
         );
 
 
-        // SES KANALINI BUL
+        // SES KANALI
 
         const channel =
             await guild.channels.fetch(CHANNEL_ID);
@@ -192,6 +194,7 @@ async function sesKanalinaGir() {
             );
 
             return;
+
         }
 
 
@@ -200,7 +203,7 @@ async function sesKanalinaGir() {
         );
 
 
-        // ZATEN BAĞLI MI?
+        // MEVCUT BAĞLANTI
 
         const mevcutBaglanti =
             getVoiceConnection(GUILD_ID);
@@ -213,6 +216,7 @@ async function sesKanalinaGir() {
             );
 
             return;
+
         }
 
 
@@ -245,10 +249,10 @@ async function sesKanalinaGir() {
         );
 
 
-        // SES BAĞLANTI DURUMU
+        // SES DURUMU
 
         connection.on(
-            'stateChange',
+            "stateChange",
             (oldState, newState) => {
 
                 console.log(
@@ -262,7 +266,7 @@ async function sesKanalinaGir() {
         // SES HATASI
 
         connection.on(
-            'error',
+            "error",
             (err) => {
 
                 console.error(
@@ -290,7 +294,7 @@ async function sesKanalinaGir() {
 
 
 // ======================================
-// BOT HAZIR OLDUĞUNDA
+// BOT READY
 // ======================================
 
 client.once(
@@ -333,7 +337,7 @@ client.once(
 
 
         // ======================================
-        // 30 SANİYEDE BİR SES BAĞLANTISINI KONTROL ET
+        // 30 SANİYEDE BİR KONTROL
         // ======================================
 
         setInterval(
@@ -384,61 +388,222 @@ client.once(
 
 
 // ======================================
+// DISCORD GATEWAY API TESTİ
+// ======================================
+
+async function gatewayApiTesti() {
+
+    console.log("");
+    console.log("======================================");
+    console.log(">>> DISCORD API TESTİ BAŞLIYOR...");
+    console.log("======================================");
+
+
+    if (!BOT_TOKEN) {
+
+        console.error(
+            "❌ BOT_TOKEN BULUNAMADI!"
+        );
+
+        return false;
+
+    }
+
+
+    const controller =
+        new AbortController();
+
+
+    const timeout =
+        setTimeout(() => {
+
+            controller.abort();
+
+        }, 10000);
+
+
+    try {
+
+        console.log(
+            ">>> Discord /gateway/bot endpointine bağlanılıyor..."
+        );
+
+
+        const response =
+            await fetch(
+                "https://discord.com/api/v10/gateway/bot",
+                {
+                    method: "GET",
+
+                    headers: {
+                        "Authorization":
+                            `Bot ${BOT_TOKEN}`,
+
+                        "User-Agent":
+                            "DiscordAFKBot/1.0"
+                    },
+
+                    signal:
+                        controller.signal
+                }
+            );
+
+
+        console.log(
+            ">>> GATEWAY API HTTP DURUMU:",
+            response.status
+        );
+
+
+        const text =
+            await response.text();
+
+
+        console.log(
+            ">>> GATEWAY API CEVABI:",
+            text
+        );
+
+
+        if (response.ok) {
+
+            console.log(
+                "🟢 DISCORD GATEWAY API TESTİ BAŞARILI!"
+            );
+
+            return true;
+
+        } else {
+
+            console.error(
+                "❌ DISCORD GATEWAY API BAŞARISIZ!"
+            );
+
+            return false;
+
+        }
+
+
+    } catch (error) {
+
+        if (error.name === "AbortError") {
+
+            console.error(
+                "❌ GATEWAY API TESTİ 10 SANİYEDE ZAMAN AŞIMINA UĞRADI!"
+            );
+
+        } else {
+
+            console.error(
+                "❌ GATEWAY API HATASI:",
+                error
+            );
+
+        }
+
+        return false;
+
+    } finally {
+
+        clearTimeout(timeout);
+
+    }
+
+}
+
+
+// ======================================
 // DISCORD LOGIN
 // ======================================
 
-console.log("");
+async function discordBaslat() {
 
-console.log(
-    "======================================"
-);
-
-console.log(
-    ">>> DISCORD LOGIN BAŞLIYOR..."
-);
-
-console.log(
-    "======================================"
-);
+    console.log("");
+    console.log("======================================");
+    console.log(">>> DISCORD LOGIN BAŞLIYOR...");
+    console.log("======================================");
 
 
-if (!BOT_TOKEN) {
+    if (!BOT_TOKEN) {
 
-    console.error(
-        "❌ BOT_TOKEN BULUNAMADI!"
-    );
+        console.error(
+            "❌ BOT_TOKEN BULUNAMADI!"
+        );
 
-} else {
+        return;
+
+    }
+
 
     console.log(
         ">>> BOT_TOKEN bulundu."
     );
+
 
     console.log(
         ">>> Discord'a bağlanılıyor..."
     );
 
 
-    client.login(BOT_TOKEN)
+    try {
 
-        .then(() => {
+        await client.login(BOT_TOKEN);
 
-            console.log(
-                "🟢 DISCORD LOGIN KOMUTU BAŞARILI!"
-            );
+        console.log(
+            "🟢 DISCORD LOGIN KOMUTU BAŞARILI!"
+        );
 
-        })
+    } catch (err) {
 
-        .catch((err) => {
+        console.error("");
 
-            console.error("");
+        console.error(
+            "❌ DISCORD LOGIN HATASI:"
+        );
 
-            console.error(
-                "❌ DISCORD LOGIN HATASI:"
-            );
+        console.error(err);
 
-            console.error(err);
-
-        });
+    }
 
 }
+
+
+// ======================================
+// BAŞLAT
+// ======================================
+
+(async () => {
+
+    const apiTestSonucu =
+        await gatewayApiTesti();
+
+
+    console.log("");
+
+
+    if (apiTestSonucu) {
+
+        console.log(
+            "🟢 API TESTİ GEÇTİ."
+        );
+
+        console.log(
+            ">>> Şimdi Discord.js login başlatılıyor..."
+        );
+
+    } else {
+
+        console.log(
+            "🔴 API TESTİ BAŞARISIZ."
+        );
+
+        console.log(
+            ">>> Yine de Discord.js login deneniyor..."
+        );
+
+    }
+
+
+    await discordBaslat();
+
+})();
