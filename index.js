@@ -21,46 +21,40 @@ const GUILD_ID = process.env.GUILD_ID;
 const CHANNEL_ID = process.env.CHANNEL_ID;
 
 
-// ==================================================
+// ======================================
 // HTTP SUNUCUSU
-// ==================================================
+// ======================================
 
 const server = http.createServer((req, res) => {
-
     res.writeHead(200, {
         'Content-Type': 'text/plain'
     });
 
     res.end('AFK BOT aktif');
-
 });
 
 server.listen(PORT, '0.0.0.0', () => {
-
     console.log(
         `>>> HTTP SUNUCUSU BAŞLADI. Port: ${PORT}`
     );
-
 });
 
 
-// ==================================================
+// ======================================
 // DISCORD CLIENT
-// ==================================================
+// ======================================
 
 const client = new Client({
-
     intents: [
         GatewayIntentBits.Guilds,
         GatewayIntentBits.GuildVoiceStates
     ]
-
 });
 
 
-// ==================================================
+// ======================================
 // DISCORD DEBUG
-// ==================================================
+// ======================================
 
 client.on('debug', (info) => {
 
@@ -69,7 +63,26 @@ client.on('debug', (info) => {
         info
     );
 
+    if (
+        info.includes("Preparing to connect") ||
+        info.includes("Identifying") ||
+        info.includes("Connected") ||
+        info.includes("READY")
+    ) {
+
+        console.log(
+            ">>> DISCORD WS DURUMU:",
+            client.ws.status
+        );
+
+    }
+
 });
+
+
+// ======================================
+// DISCORD UYARILARI
+// ======================================
 
 client.on('warn', (info) => {
 
@@ -79,6 +92,11 @@ client.on('warn', (info) => {
     );
 
 });
+
+
+// ======================================
+// DISCORD HATALARI
+// ======================================
 
 client.on('error', (err) => {
 
@@ -90,9 +108,55 @@ client.on('error', (err) => {
 });
 
 
-// ==================================================
+// ======================================
+// SHARD EVENTLERİ
+// ======================================
+
+client.on('shardReady', (id) => {
+
+    console.log(
+        "🟢 SHARD READY:",
+        id
+    );
+
+});
+
+
+client.on('shardError', (error, shardId) => {
+
+    console.error(
+        "❌ SHARD ERROR:",
+        shardId,
+        error
+    );
+
+});
+
+
+client.on('shardDisconnect', (event, shardId) => {
+
+    console.error(
+        "🔴 SHARD DISCONNECT:",
+        shardId,
+        event
+    );
+
+});
+
+
+client.on('shardReconnecting', (id) => {
+
+    console.log(
+        "🔄 SHARD RECONNECTING:",
+        id
+    );
+
+});
+
+
+// ======================================
 // SES KANALINA GİR
-// ==================================================
+// ======================================
 
 async function sesKanalinaGir() {
 
@@ -104,6 +168,8 @@ async function sesKanalinaGir() {
         console.log("======================================");
 
 
+        // SUNUCUYU BUL
+
         const guild =
             await client.guilds.fetch(GUILD_ID);
 
@@ -112,6 +178,8 @@ async function sesKanalinaGir() {
             `>>> SUNUCU BULUNDU: ${guild.name}`
         );
 
+
+        // SES KANALINI BUL
 
         const channel =
             await guild.channels.fetch(CHANNEL_ID);
@@ -124,7 +192,6 @@ async function sesKanalinaGir() {
             );
 
             return;
-
         }
 
 
@@ -133,7 +200,7 @@ async function sesKanalinaGir() {
         );
 
 
-        // Zaten bağlıysa tekrar bağlanma
+        // ZATEN BAĞLI MI?
 
         const mevcutBaglanti =
             getVoiceConnection(GUILD_ID);
@@ -146,9 +213,10 @@ async function sesKanalinaGir() {
             );
 
             return;
-
         }
 
+
+        // SES KANALINA GİR
 
         console.log(
             ">>> SES KANALINA GİRİLİYOR..."
@@ -177,6 +245,8 @@ async function sesKanalinaGir() {
         );
 
 
+        // SES BAĞLANTI DURUMU
+
         connection.on(
             'stateChange',
             (oldState, newState) => {
@@ -188,6 +258,8 @@ async function sesKanalinaGir() {
             }
         );
 
+
+        // SES HATASI
 
         connection.on(
             'error',
@@ -205,6 +277,7 @@ async function sesKanalinaGir() {
     } catch (err) {
 
         console.error("");
+
         console.error(
             "❌ SES KANALINA GİRİŞ HATASI:"
         );
@@ -216,18 +289,27 @@ async function sesKanalinaGir() {
 }
 
 
-// ==================================================
-// BOT DISCORD'A BAĞLANDI
-// ==================================================
+// ======================================
+// BOT HAZIR OLDUĞUNDA
+// ======================================
 
 client.once(
     Events.ClientReady,
     async (c) => {
 
         console.log("");
-        console.log("######################################");
-        console.log("🟢🟢🟢 BOT ÇEVRİMİÇİ OLDU 🟢🟢🟢");
-        console.log("######################################");
+
+        console.log(
+            "######################################"
+        );
+
+        console.log(
+            "🟢🟢🟢 BOT ÇEVRİMİÇİ OLDU 🟢🟢🟢"
+        );
+
+        console.log(
+            "######################################"
+        );
 
 
         console.log(
@@ -245,12 +327,14 @@ client.once(
         );
 
 
-        // Ses kanalına gir
+        // SES KANALINA GİR
 
         await sesKanalinaGir();
 
 
-        // Her 30 saniyede kontrol et
+        // ======================================
+        // 30 SANİYEDE BİR SES BAĞLANTISINI KONTROL ET
+        // ======================================
 
         setInterval(
             async () => {
@@ -273,7 +357,6 @@ client.once(
 
 
                         await sesKanalinaGir();
-
 
                     } else {
 
@@ -300,14 +383,23 @@ client.once(
 );
 
 
-// ==================================================
-// GİRİŞ
-// ==================================================
+// ======================================
+// DISCORD LOGIN
+// ======================================
 
 console.log("");
-console.log("======================================");
-console.log(">>> DISCORD LOGIN BAŞLIYOR...");
-console.log("======================================");
+
+console.log(
+    "======================================"
+);
+
+console.log(
+    ">>> DISCORD LOGIN BAŞLIYOR..."
+);
+
+console.log(
+    "======================================"
+);
 
 
 if (!BOT_TOKEN) {
@@ -340,6 +432,7 @@ if (!BOT_TOKEN) {
         .catch((err) => {
 
             console.error("");
+
             console.error(
                 "❌ DISCORD LOGIN HATASI:"
             );
