@@ -6,6 +6,20 @@ console.log("2 - Discord.js yüklendi...");
 const { joinVoiceChannel, getVoiceConnection } = require('@discordjs/voice');
 console.log("3 - Voice paketi yüklendi...");
 const http = require('http');
+console.log("4 - HTTP sunucusu başlatılıyor...");
+
+const server = http.createServer((req, res) => {
+    res.writeHead(200);
+    res.end('AFK BOT aktif');
+});
+
+server.listen(process.env.PORT || 3000, '0.0.0.0', () => {
+    console.log("5 - HTTP sunucusu başarıyla başladı!");
+});
+
+console.log("6 - HTTP sunucusu komutundan çıkıldı...");
+
+console.log("Discord'a bağlanma isteği gönderiliyor...");
 
 // Render'ın servisi canlı tutması için HTTP sunucusu
 http.createServer((req, res) => {
