@@ -1,7 +1,8 @@
-const { Client, GatewayIntentBits } = require('discord.js');
+const { Client, GatewayIntentBits, Events } = require('discord.js');
 const { joinVoiceChannel } = require('@discordjs/voice');
 const http = require('http');
 
+// Render port dinleyicisi
 http.createServer((req, res) => res.end('OK')).listen(process.env.PORT || 3000);
 
 const client = new Client({
@@ -11,14 +12,16 @@ const client = new Client({
     ]
 });
 
-client.on('ready', async () => {
-    console.log(`>>> BOT GIRIS YAPTI: ${client.user.tag}`);
+console.log("Discord'a bağlanma isteği gönderiliyor...");
+
+client.once(Events.ClientReady, async (c) => {
+    console.log(`>>> BOT CEVRIMICI OLDU: ${c.user.tag}`);
 
     try {
         const guild = await client.guilds.fetch(process.env.GUILD_ID);
         const channel = await guild.channels.fetch(process.env.CHANNEL_ID);
 
-        console.log(`Hedef kanal: ${channel.name}`);
+        console.log(`>>> Hedef Kanal: ${channel.name}`);
 
         joinVoiceChannel({
             channelId: channel.id,
@@ -28,14 +31,16 @@ client.on('ready', async () => {
             selfMute: true
         });
 
-        console.log('>>> ODAYA GIRIS BASARILI!');
+        console.log(">>> SES KANALINA BAGLANTI BASARILI!");
     } catch (err) {
-        console.error('>>> ODA BAGLANTI HATASI:', err);
+        console.error(">>> KANAL BAGLANTI HATASI:", err);
     }
 });
 
-client.on('error', (err) => console.error('>>> DISCORD HATASI:', err));
+client.on('error', (err) => console.error(">>> ISTEMCI HATASI:", err));
 
-client.login(process.env.BOT_TOKEN).catch(err => {
-    console.error('>>> LOGIN HATASI:', err);
+client.login(process.env.BOT_TOKEN).then(() => {
+    console.log(">>> Token doğrulandı, giriş başarılı!");
+}).catch(err => {
+    console.error(">>> GIRIS HATASI:", err.message);
 });
