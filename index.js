@@ -2,7 +2,7 @@ const { Client, GatewayIntentBits } = require('discord.js');
 const { joinVoiceChannel } = require('@discordjs/voice');
 const http = require('http');
 
-// Bulut sunucusunun kapanmaması için basit web sunucusu
+// Render servisinin ayakta kalması için
 http.createServer((req, res) => res.end('Bot Aktif!')).listen(process.env.PORT || 3000);
 
 const client = new Client({
@@ -12,18 +12,33 @@ const client = new Client({
     ]
 });
 
-client.on('ready', () => {
-    console.log(`${client.user.tag} aktif, ses kanalına bağlanılıyor...`);
-    const guild = client.guilds.cache.get(process.env.GUILD_ID);
-    if (!guild) return console.log('Sunucu bulunamadı!');
+client.on('ready', async () => {
+    console.log(`>>> BOT GIRIS YAPTI: ${client.user.tag}`);
 
-    joinVoiceChannel({
-        channelId: process.env.CHANNEL_ID,
-        guildId: guild.id,
-        adapterCreator: guild.voiceAdapterCreator,
-        selfDeaf: true,
-        selfMute: true
-    });
+    const guildId = process.env.GUILD_ID?.trim();
+    const channelId = process.env.CHANNEL_ID?.trim();
+
+    try {
+        const guild = await client.guilds.fetch(guildId);
+        console.log(`>>> SUNUCU BULUNDU: ${guild.name}`);
+
+        const channel = await guild.channels.fetch(channelId);
+        console.log(`>>> KANAL BULUNDU: ${channel.name}`);
+
+        joinVoiceChannel({
+            channelId: channel.id,
+            guildId: guild.id,
+            adapterCreator: guild.voiceAdapterCreator,
+            selfDeaf: true,
+            selfMute: true
+        });
+
+        console.log('>>> KANALA BAGLANTI ISTEGI GONDERILDI!');
+    } catch (err) {
+        console.error('>>> BAGLANTI HATASI:', err.message);
+    }
 });
 
-client.login(process.env.BOT_TOKEN);
+client.on('error', (err) => console.error('Discord Hatası:', err));
+
+client.login(process.env.BOT_TOKEN?.trim());
