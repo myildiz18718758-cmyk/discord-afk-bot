@@ -207,19 +207,24 @@ client.on('error', (err) => {
 
 console.log(">>> Discord'a bağlanma isteği gönderiliyor...");
 
+console.log(">>> DISCORD LOGIN BAŞLIYOR...");
+
+client.on('debug', (info) => {
+    console.log(">>> DISCORD DEBUG:", info);
+});
+
+client.on('warn', (info) => {
+    console.warn(">>> DISCORD UYARI:", info);
+});
+
+client.on('error', (err) => {
+    console.error(">>> DISCORD HATA:", err);
+});
+
 client.login(process.env.BOT_TOKEN)
-    .then(() => {
-
-        console.log(
-            ">>> TOKEN DOĞRULANDI, GİRİŞ BAŞARILI!"
-        );
-
+    .then((token) => {
+        console.log(">>> DISCORD LOGIN BAŞARILI!");
     })
     .catch((err) => {
-
-        console.error(
-            ">>> DISCORD GİRİŞ HATASI:",
-            err.message
-        );
-
+        console.error(">>> DISCORD LOGIN HATASI:", err);
     });
