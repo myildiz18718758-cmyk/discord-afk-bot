@@ -1,7 +1,10 @@
 console.log("🔥 AFK BOT KODU BASLADI!");
+console.log("1 - Discord.js yükleniyor...");
 
 const { Client, GatewayIntentBits, Events } = require('discord.js');
+console.log("2 - Discord.js yüklendi...");
 const { joinVoiceChannel, getVoiceConnection } = require('@discordjs/voice');
+console.log("3 - Voice paketi yüklendi...");
 const http = require('http');
 
 // Render'ın servisi canlı tutması için HTTP sunucusu
