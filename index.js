@@ -2,25 +2,7 @@ const { Client, GatewayIntentBits } = require('discord.js');
 const { joinVoiceChannel } = require('@discordjs/voice');
 const http = require('http');
 
-// Render web servisini açık tutmak için port dinleyici
-const port = process.env.PORT || 3000;
-http.createServer((req, res) => res.end('Bot Aktif')).listen(port, () => {
-    console.log(`Web sunucusu ${port} portunda aktif.`);
-});
-
-const token = (process.env.BOT_TOKEN || '').trim();
-const guildId = (process.env.GUILD_ID || '').trim();
-const channelId = (process.env.CHANNEL_ID || '').trim();
-
-console.log("Değişken Kontrolü:");
-console.log("- Token uzunluğu:", token.length);
-console.log("- Guild ID:", guildId || "YOK!");
-console.log("- Channel ID:", channelId || "YOK!");
-
-if (!token) {
-    console.error("HATA: BOT_TOKEN tanımlı değil veya boş!");
-    process.exit(1);
-}
+http.createServer((req, res) => res.end('OK')).listen(process.env.PORT || 3000);
 
 const client = new Client({
     intents: [
@@ -29,15 +11,14 @@ const client = new Client({
     ]
 });
 
-client.once('ready', async () => {
+client.on('ready', async () => {
     console.log(`>>> BOT GIRIS YAPTI: ${client.user.tag}`);
 
     try {
-        const guild = await client.guilds.fetch(guildId);
-        console.log(`>>> Sunucu bulundu: ${guild.name}`);
+        const guild = await client.guilds.fetch(process.env.GUILD_ID);
+        const channel = await guild.channels.fetch(process.env.CHANNEL_ID);
 
-        const channel = await guild.channels.fetch(channelId);
-        console.log(`>>> Kanal bulundu: ${channel.name}`);
+        console.log(`Hedef kanal: ${channel.name}`);
 
         joinVoiceChannel({
             channelId: channel.id,
@@ -47,14 +28,14 @@ client.once('ready', async () => {
             selfMute: true
         });
 
-        console.log(">>> BOT SES KANALINA BAGLANDI!");
+        console.log('>>> ODAYA GIRIS BASARILI!');
     } catch (err) {
-        console.error(">>> KANAL BAGLANTI HATASI:", err.message);
+        console.error('>>> ODA BAGLANTI HATASI:', err);
     }
 });
 
-client.on('error', (err) => console.error(">>> DISCORD ISTEMCI HATASI:", err));
+client.on('error', (err) => console.error('>>> DISCORD HATASI:', err));
 
-client.login(token).catch(err => {
-    console.error(">>> LOGIN BASARISIZ:", err.message);
+client.login(process.env.BOT_TOKEN).catch(err => {
+    console.error('>>> LOGIN HATASI:', err);
 });
