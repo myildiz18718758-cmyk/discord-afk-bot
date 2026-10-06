@@ -2,8 +2,7 @@ const { Client, GatewayIntentBits } = require('discord.js');
 const { joinVoiceChannel } = require('@discordjs/voice');
 const http = require('http');
 
-// Render servisinin ayakta kalması için
-http.createServer((req, res) => res.end('Bot Aktif!')).listen(process.env.PORT || 3000);
+http.createServer((req, res) => res.end('OK')).listen(process.env.PORT || 3000);
 
 const client = new Client({
     intents: [
@@ -12,18 +11,16 @@ const client = new Client({
     ]
 });
 
+console.log("Sistem baslatildi, token kontrol ediliyor...");
+
 client.on('ready', async () => {
     console.log(`>>> BOT GIRIS YAPTI: ${client.user.tag}`);
 
-    const guildId = process.env.GUILD_ID?.trim();
-    const channelId = process.env.CHANNEL_ID?.trim();
-
     try {
-        const guild = await client.guilds.fetch(guildId);
-        console.log(`>>> SUNUCU BULUNDU: ${guild.name}`);
+        const guild = await client.guilds.fetch(process.env.GUILD_ID);
+        const channel = await guild.channels.fetch(process.env.CHANNEL_ID);
 
-        const channel = await guild.channels.fetch(channelId);
-        console.log(`>>> KANAL BULUNDU: ${channel.name}`);
+        console.log(`Baglanilacak Oda: ${channel.name} (${guild.name})`);
 
         joinVoiceChannel({
             channelId: channel.id,
@@ -33,12 +30,12 @@ client.on('ready', async () => {
             selfMute: true
         });
 
-        console.log('>>> KANALA BAGLANTI ISTEGI GONDERILDI!');
+        console.log(">>> ODAYA GIRIS BASARILI!");
     } catch (err) {
-        console.error('>>> BAGLANTI HATASI:', err.message);
+        console.error(">>> ODAYA GIRERKEN HATA:", err);
     }
 });
 
-client.on('error', (err) => console.error('Discord Hatası:', err));
-
-client.login(process.env.BOT_TOKEN?.trim());
+client.login(process.env.BOT_TOKEN).catch(err => {
+    console.error(">>> GIRIS HATASI (TOKEN GECERSIZ OLABILIR):", err.message);
+});
