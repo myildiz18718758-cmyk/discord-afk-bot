@@ -1,4 +1,5 @@
 console.log("🔥 AFK BOT BAŞLIYOR...");
+console.log("Discord.js sürümü:", require('discord.js').version);
 
 const {
     Client,
