@@ -1,6 +1,10 @@
 console.log("🔥 AFK BOT BAŞLIYOR...");
 
-const { Client, GatewayIntentBits, Events } = require('discord.js');
+const {
+    Client,
+    GatewayIntentBits,
+    Events
+} = require('discord.js');
 
 const {
     joinVoiceChannel,
@@ -9,12 +13,19 @@ const {
 
 const http = require('http');
 
+// ==================================================
+// AYARLAR
+// ==================================================
+
+const PORT = process.env.PORT || 3000;
+
+const BOT_TOKEN = process.env.BOT_TOKEN;
+const GUILD_ID = process.env.GUILD_ID;
+const CHANNEL_ID = process.env.CHANNEL_ID;
 
 // ==================================================
 // RENDER WEB SUNUCUSU
 // ==================================================
-
-const PORT = process.env.PORT || 3000;
 
 console.log(`>>> HTTP sunucusu hazırlanıyor. Port: ${PORT}`);
 
@@ -27,19 +38,52 @@ const server = http.createServer((req, res) => {
 });
 
 server.on('error', (err) => {
-    console.error(">>> HTTP SUNUCU HATASI:", err);
+    console.error("❌ HTTP SUNUCU HATASI:", err);
 });
 
 server.listen(PORT, '0.0.0.0', () => {
     console.log(`>>> HTTP SUNUCUSU BAŞLADI. Port: ${PORT}`);
 });
 
+// ==================================================
+// ENV KONTROLÜ
+// ==================================================
+
+console.log("");
+console.log("======================================");
+console.log(">>> AYAR KONTROLÜ");
+console.log("======================================");
+
+console.log(
+    `BOT_TOKEN: ${BOT_TOKEN ? "VAR" : "YOK"}`
+);
+
+console.log(
+    `GUILD_ID: ${GUILD_ID ? "VAR" : "YOK"}`
+);
+
+console.log(
+    `CHANNEL_ID: ${CHANNEL_ID ? "VAR" : "YOK"}`
+);
+
+if (!BOT_TOKEN) {
+    console.error("❌ BOT_TOKEN BULUNAMADI!");
+}
+
+if (!GUILD_ID) {
+    console.error("❌ GUILD_ID BULUNAMADI!");
+}
+
+if (!CHANNEL_ID) {
+    console.error("❌ CHANNEL_ID BULUNAMADI!");
+}
 
 // ==================================================
 // DISCORD CLIENT
 // ==================================================
 
-console.log(">>> Discord.js yükleniyor...");
+console.log("");
+console.log(">>> Discord.js hazırlanıyor...");
 
 const client = new Client({
     intents: [
@@ -48,16 +92,71 @@ const client = new Client({
     ]
 });
 
-console.log(">>> Discord.js yüklendi.");
-console.log(">>> Voice paketi yüklendi.");
-
+console.log(">>> Discord.js hazır.");
 
 // ==================================================
-// DEĞİŞKENLER
+// DISCORD DEBUG
 // ==================================================
 
-let reconnectTimer = null;
+client.on('debug', (info) => {
+    console.log("🔵 DISCORD DEBUG:", info);
+});
 
+client.on('warn', (info) => {
+    console.warn("🟡 DISCORD UYARI:", info);
+});
+
+client.on('error', (err) => {
+    console.error("🔴 DISCORD CLIENT HATASI:", err);
+});
+
+// ==================================================
+// GATEWAY HATALARI
+// ==================================================
+
+client.on('shardError', (error, shardId) => {
+
+    console.error("");
+    console.error("======================================");
+    console.error("❌ SHARD HATASI");
+    console.error("======================================");
+
+    console.error("Shard:", shardId);
+    console.error(error);
+
+});
+
+client.on('shardReady', (shardId) => {
+
+    console.log("");
+    console.log("======================================");
+    console.log("🟢 SHARD HAZIR");
+    console.log("======================================");
+
+    console.log("Shard:", shardId);
+
+});
+
+client.on('shardReconnecting', (shardId) => {
+
+    console.log("");
+    console.log("🟠 SHARD TEKRAR BAĞLANIYOR...");
+    console.log("Shard:", shardId);
+
+});
+
+client.on('shardDisconnect', (event, shardId) => {
+
+    console.log("");
+    console.log("======================================");
+    console.log("🔴 SHARD DISCONNECT");
+    console.log("======================================");
+
+    console.log("Shard:", shardId);
+    console.log("Kod:", event.code);
+    console.log("Temiz mi?:", event.wasClean);
+
+});
 
 // ==================================================
 // SES KANALINA GİR
@@ -69,50 +168,35 @@ async function sesKanalinaGir() {
 
         console.log("");
         console.log("======================================");
-        console.log(">>> SES KANALINA BAĞLANMA BAŞLIYOR");
+        console.log(">>> SES KANALINA BAĞLANILIYOR");
         console.log("======================================");
 
-        // Sunucuyu bul
-        const guild = await client.guilds.fetch(
-            process.env.GUILD_ID
-        );
+        const guild = await client.guilds.fetch(GUILD_ID);
 
         if (!guild) {
-
-            console.error(
-                ">>> SUNUCU BULUNAMADI!"
-            );
-
+            console.error("❌ SUNUCU BULUNAMADI!");
             return;
         }
 
         console.log(
-            `>>> SUNUCU BULUNDU: ${guild.name}`
+            `>>> SUNUCU: ${guild.name}`
         );
 
-
-        // Kanalı bul
         const channel = await guild.channels.fetch(
-            process.env.CHANNEL_ID
+            CHANNEL_ID
         );
 
         if (!channel) {
-
-            console.error(
-                ">>> SES KANALI BULUNAMADI!"
-            );
-
+            console.error("❌ SES KANALI BULUNAMADI!");
             return;
         }
 
         console.log(
-            `>>> HEDEF KANAL: ${channel.name}`
+            `>>> KANAL: ${channel.name}`
         );
 
-
-        // Zaten ses kanalındaysa tekrar bağlanma
         const mevcutBaglanti =
-            getVoiceConnection(guild.id);
+            getVoiceConnection(GUILD_ID);
 
         if (mevcutBaglanti) {
 
@@ -123,8 +207,6 @@ async function sesKanalinaGir() {
             return;
         }
 
-
-        // Ses kanalına bağlan
         console.log(
             ">>> SES KANALINA GİRİLİYOR..."
         );
@@ -144,13 +226,10 @@ async function sesKanalinaGir() {
 
         });
 
-
         console.log(
-            ">>> SES KANALINA BAĞLANTI BAŞARILI!"
+            "🟢 SES KANALINA BAĞLANTI KOMUTU GÖNDERİLDİ."
         );
 
-
-        // Ses bağlantısının durumunu takip et
         connection.on(
             'stateChange',
             (oldState, newState) => {
@@ -162,101 +241,33 @@ async function sesKanalinaGir() {
             }
         );
 
-
-        // Ses bağlantısında hata
         connection.on(
             'error',
             (err) => {
 
                 console.error(
-                    ">>> SES BAĞLANTI HATASI:",
-                    err.message
+                    "❌ SES BAĞLANTI HATASI:",
+                    err
                 );
-
-                yenidenBaglan();
 
             }
         );
 
     } catch (err) {
 
+        console.error("");
         console.error(
-            ">>> SES KANALINA GİRİŞ HATASI:",
-            err
+            "❌ SES KANALINA GİRİŞ HATASI:"
         );
 
-        yenidenBaglan();
-
-    }
-}
-
-
-// ==================================================
-// TEKRAR BAĞLAN
-// ==================================================
-
-function yenidenBaglan() {
-
-    if (reconnectTimer) {
-
-        return;
+        console.error(err);
 
     }
 
-    console.log(
-        ">>> 10 SANİYE SONRA TEKRAR BAĞLANILACAK..."
-    );
-
-
-    reconnectTimer = setTimeout(
-        async () => {
-
-            reconnectTimer = null;
-
-            await sesKanalinaGir();
-
-        },
-        10000
-    );
 }
 
-
 // ==================================================
-// DISCORD DEBUG
-// ==================================================
-
-client.on('debug', (info) => {
-
-    console.log(
-        ">>> DISCORD DEBUG:",
-        info
-    );
-
-});
-
-
-client.on('warn', (info) => {
-
-    console.warn(
-        ">>> DISCORD UYARI:",
-        info
-    );
-
-});
-
-
-client.on('error', (err) => {
-
-    console.error(
-        ">>> DISCORD HATASI:",
-        err
-    );
-
-});
-
-
-// ==================================================
-// BOT DISCORD'A BAĞLANDI
+// BOT HAZIR
 // ==================================================
 
 client.once(
@@ -264,168 +275,142 @@ client.once(
     async (c) => {
 
         console.log("");
-        console.log("======================================");
+        console.log("######################################");
+        console.log("🟢🟢🟢 BOT ÇEVRİMİÇİ OLDU 🟢🟢🟢");
+        console.log("######################################");
+
         console.log(
-            `>>> BOT ÇEVRİMİÇİ OLDU: ${c.user.tag}`
+            `>>> Bot: ${c.user.tag}`
         );
-        console.log("======================================");
+
+        console.log(
+            `>>> Bot ID: ${c.user.id}`
+        );
+
+        console.log(
+            `>>> Sunucu sayısı: ${client.guilds.cache.size}`
+        );
+
         console.log("");
 
-
-        // Ses kanalına gir
         await sesKanalinaGir();
 
+        // Her 30 saniyede kontrol
+        setInterval(async () => {
 
-        // Her 30 saniyede bir kontrol et
-        setInterval(
-            async () => {
+            try {
 
-                try {
+                const connection =
+                    getVoiceConnection(GUILD_ID);
 
-                    const connection =
-                        getVoiceConnection(
-                            process.env.GUILD_ID
-                        );
+                if (!connection) {
 
+                    console.log(
+                        "⚠️ SES BAĞLANTISI YOK. TEKRAR DENENİYOR..."
+                    );
 
-                    if (!connection) {
+                    await sesKanalinaGir();
 
-                        console.log(
-                            ">>> SES BAĞLANTISI YOK!"
-                        );
+                } else {
 
-                        console.log(
-                            ">>> TEKRAR BAĞLANILIYOR..."
-                        );
-
-                        await sesKanalinaGir();
-
-                    } else {
-
-                        console.log(
-                            ">>> SES BAĞLANTISI AKTİF."
-                        );
-
-                    }
-
-                } catch (err) {
-
-                    console.error(
-                        ">>> SES KONTROL HATASI:",
-                        err.message
+                    console.log(
+                        "🟢 SES BAĞLANTISI AKTİF."
                     );
 
                 }
 
-            },
-            30000
-        );
+            } catch (err) {
+
+                console.error(
+                    "❌ SES KONTROL HATASI:",
+                    err
+                );
+
+            }
+
+        }, 30000);
 
     }
 );
 
-
 // ==================================================
-// DISCORD'A GİRİŞ
+// LOGIN
 // ==================================================
 
 console.log("");
 console.log("======================================");
-console.log(">>> DISCORD LOGIN BAŞLIYOR...");
+console.log(">>> DISCORD LOGIN BAŞLIYOR");
 console.log("======================================");
 console.log("");
 
-
-if (!process.env.BOT_TOKEN) {
+if (!BOT_TOKEN) {
 
     console.error(
-        "❌ BOT_TOKEN BULUNAMADI!"
+        "❌ BOT_TOKEN YOK. LOGIN YAPILMADI."
     );
 
 } else {
 
     console.log(
-        ">>> BOT_TOKEN bulundu."
+        ">>> Token bulundu."
     );
-
-}
-
-
-if (!process.env.GUILD_ID) {
-
-    console.error(
-        "❌ GUILD_ID BULUNAMADI!"
-    );
-
-} else {
 
     console.log(
-        ">>> GUILD_ID bulundu."
+        ">>> Discord Gateway bağlantısı başlatılıyor..."
     );
 
-}
-
-
-if (!process.env.CHANNEL_ID) {
-
-    console.error(
-        "❌ CHANNEL_ID BULUNAMADI!"
-    );
-
-} else {
-
-    console.log(
-        ">>> CHANNEL_ID bulundu."
-    );
-
-}
-
-
-console.log(
-    ">>> Discord'a bağlanma isteği gönderiliyor..."
-);
-
-
-client.login(process.env.BOT_TOKEN)
-
-    .then(() => {
-
-        console.log("");
-        console.log(
-            "======================================"
-        );
-
-        console.log(
-            ">>> DISCORD LOGIN BAŞARILI!"
-        );
-
-        console.log(
-            "======================================"
-        );
-
-        console.log("");
-
-    })
-
-    .catch((err) => {
+    // 20 saniyelik teşhis zamanlayıcısı
+    const loginTimer = setTimeout(() => {
 
         console.error("");
+        console.error("======================================");
+        console.error("⏰ 20 SANİYE GEÇTİ!");
+        console.error("======================================");
+
         console.error(
-            "======================================"
+            "Discord Gateway bağlantısı hâlâ tamamlanmadı."
         );
 
         console.error(
-            "❌ DISCORD LOGIN HATASI!"
+            "BOT ÇEVRİMİÇİ OLDU mesajı gelmedi."
         );
 
         console.error(
-            "======================================"
+            "Gateway bağlantısı beklemede/takılı durumda."
         );
 
-        console.error(
-            err
-        );
+    }, 20000);
 
-        console.error("");
+    client.login(BOT_TOKEN)
+        .then((token) => {
 
-    });
+            clearTimeout(loginTimer);
+
+            console.log("");
+            console.log("======================================");
+            console.log("🟢 DISCORD LOGIN BAŞARILI");
+            console.log("======================================");
+
+            console.log(
+                ">>> Discord token kabul edildi."
+            );
+
+            console.log(
+                ">>> Gateway bağlantısı kuruluyor..."
+            );
+
+        })
+        .catch((err) => {
+
+            clearTimeout(loginTimer);
+
+            console.error("");
+            console.error("======================================");
+            console.error("❌❌❌ DISCORD LOGIN HATASI ❌❌❌");
+            console.error("======================================");
+
+            console.error(err);
+
+        });
+
+}
