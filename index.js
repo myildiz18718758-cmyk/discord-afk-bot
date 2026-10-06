@@ -1,3 +1,5 @@
+console.log("🔥 AFK BOT KODU BASLADI!");
+
 const { Client, GatewayIntentBits, Events } = require('discord.js');
 const { joinVoiceChannel, getVoiceConnection } = require('@discordjs/voice');
 const http = require('http');
