@@ -1,213 +1,350 @@
+console.log("🔥 AFK BOT BAŞLIYOR...");
+
+const {
+    Client,
+    GatewayIntentBits,
+    Events
+} = require('discord.js');
+
+const {
+    joinVoiceChannel,
+    getVoiceConnection
+} = require('@discordjs/voice');
+
 const http = require('http');
-const WebSocket = require('ws');
 
 const PORT = process.env.PORT || 3000;
-const TOKEN = process.env.BOT_TOKEN;
 
-// Render HTTP sunucusu
+const BOT_TOKEN = process.env.BOT_TOKEN;
+const GUILD_ID = process.env.GUILD_ID;
+const CHANNEL_ID = process.env.CHANNEL_ID;
+
+
+// ==================================================
+// HTTP SUNUCUSU
+// ==================================================
+
 const server = http.createServer((req, res) => {
+
     res.writeHead(200, {
         'Content-Type': 'text/plain'
     });
 
-    res.end('AFK BOT Gateway Test');
+    res.end('AFK BOT aktif');
+
 });
 
 server.listen(PORT, '0.0.0.0', () => {
-    console.log(`🟢 HTTP sunucusu çalışıyor: ${PORT}`);
+
+    console.log(
+        `>>> HTTP SUNUCUSU BAŞLADI. Port: ${PORT}`
+    );
+
 });
 
-// Token kontrolü
-if (!TOKEN) {
-    console.error('❌ BOT_TOKEN bulunamadı!');
-    process.exit(1);
-}
 
-console.log('');
-console.log('======================================');
-console.log('🔥 DISCORD GATEWAY TESTİ');
-console.log('======================================');
+// ==================================================
+// DISCORD CLIENT
+// ==================================================
 
-const gatewayUrl =
-    'wss://gateway.discord.gg/?v=10&encoding=json';
+const client = new Client({
 
-console.log('>>> Gateway adresi: gateway.discord.gg');
-console.log('>>> WebSocket bağlantısı başlatılıyor...');
+    intents: [
+        GatewayIntentBits.Guilds,
+        GatewayIntentBits.GuildVoiceStates
+    ]
 
-const ws = new WebSocket(gatewayUrl, {
-    handshakeTimeout: 15000
 });
 
-let helloAlindi = false;
-let readyAlindi = false;
 
-ws.on('open', () => {
+// ==================================================
+// DISCORD DEBUG
+// ==================================================
 
-    console.log('');
-    console.log('🟢🟢🟢 WEBSOCKET BAĞLANTISI AÇILDI! 🟢🟢🟢');
-    console.log('>>> Render → Discord Gateway bağlantısı başarılı.');
+client.on('debug', (info) => {
+
+    console.log(
+        ">>> DISCORD DEBUG:",
+        info
+    );
+
 });
 
-ws.on('message', (data) => {
+client.on('warn', (info) => {
+
+    console.warn(
+        ">>> DISCORD UYARI:",
+        info
+    );
+
+});
+
+client.on('error', (err) => {
+
+    console.error(
+        ">>> DISCORD HATASI:",
+        err
+    );
+
+});
+
+
+// ==================================================
+// SES KANALINA GİR
+// ==================================================
+
+async function sesKanalinaGir() {
 
     try {
 
-        const packet = JSON.parse(data.toString());
+        console.log("");
+        console.log("======================================");
+        console.log(">>> SES KANALINA BAĞLANILIYOR");
+        console.log("======================================");
 
-        console.log('');
+
+        const guild =
+            await client.guilds.fetch(GUILD_ID);
+
+
         console.log(
-            `>>> DISCORD PAKETİ | OP: ${packet.op} | EVENT: ${packet.t || 'YOK'}`
+            `>>> SUNUCU BULUNDU: ${guild.name}`
         );
 
-        // Hello
-        if (packet.op === 10) {
 
-            helloAlindi = true;
+        const channel =
+            await guild.channels.fetch(CHANNEL_ID);
 
-            console.log('');
-            console.log('🟢 DISCORD HELLO GELDİ!');
-            console.log(
-                '>>> Discord Gateway bağlantıyı kabul etti.'
-            );
 
-            const identify = {
-                op: 2,
-
-                d: {
-                    token: TOKEN,
-
-                    intents: 513,
-
-                    properties: {
-                        os: 'linux',
-                        browser: 'afk-bot-test',
-                        device: 'afk-bot-test'
-                    }
-                }
-            };
-
-            console.log(
-                '>>> IDENTIFY gönderiliyor...'
-            );
-
-            ws.send(JSON.stringify(identify));
-        }
-
-        // Ready
-        if (packet.op === 0 && packet.t === 'READY') {
-
-            readyAlindi = true;
-
-            console.log('');
-            console.log('======================================');
-            console.log('🟢🟢🟢 DISCORD READY GELDİ! 🟢🟢🟢');
-            console.log('======================================');
-
-            console.log(
-                '>>> BOT DISCORD GATEWAYE BAŞARIYLA BAĞLANDI.'
-            );
-
-            console.log(
-                '>>> Bot adı:',
-                packet.d.user.username
-            );
-
-            console.log(
-                '>>> Bot ID:',
-                packet.d.user.id
-            );
-
-            console.log(
-                '>>> Sunucu sayısı:',
-                packet.d.guilds.length
-            );
-
-            console.log('');
-            console.log(
-                '🎉 GATEWAY TESTİ BAŞARILI!'
-            );
-
-            console.log(
-                '>>> Şimdi AFK bot koduna geri dönebiliriz.'
-            );
-        }
-
-        // Invalid Session
-        if (packet.op === 9) {
-
-            console.error('');
-            console.error(
-                '❌ DISCORD: INVALID SESSION'
-            );
+        if (!channel) {
 
             console.error(
-                '>>> Token veya Identify bilgileri reddedildi.'
+                "❌ SES KANALI BULUNAMADI!"
             );
+
+            return;
+
         }
+
+
+        console.log(
+            `>>> HEDEF KANAL: ${channel.name}`
+        );
+
+
+        // Zaten bağlıysa tekrar bağlanma
+
+        const mevcutBaglanti =
+            getVoiceConnection(GUILD_ID);
+
+
+        if (mevcutBaglanti) {
+
+            console.log(
+                "🟢 BOT ZATEN SES KANALINDA."
+            );
+
+            return;
+
+        }
+
+
+        console.log(
+            ">>> SES KANALINA GİRİLİYOR..."
+        );
+
+
+        const connection =
+            joinVoiceChannel({
+
+                channelId: channel.id,
+
+                guildId: guild.id,
+
+                adapterCreator:
+                    guild.voiceAdapterCreator,
+
+                selfMute: true,
+
+                selfDeaf: true
+
+            });
+
+
+        console.log(
+            "🟢 SES KANALINA BAĞLANTI GÖNDERİLDİ!"
+        );
+
+
+        connection.on(
+            'stateChange',
+            (oldState, newState) => {
+
+                console.log(
+                    `>>> SES DURUMU: ${oldState.status} -> ${newState.status}`
+                );
+
+            }
+        );
+
+
+        connection.on(
+            'error',
+            (err) => {
+
+                console.error(
+                    "❌ SES BAĞLANTI HATASI:",
+                    err
+                );
+
+            }
+        );
+
 
     } catch (err) {
 
+        console.error("");
         console.error(
-            '❌ Paket okunamadı:',
-            err.message
+            "❌ SES KANALINA GİRİŞ HATASI:"
+        );
+
+        console.error(err);
+
+    }
+
+}
+
+
+// ==================================================
+// BOT DISCORD'A BAĞLANDI
+// ==================================================
+
+client.once(
+    Events.ClientReady,
+    async (c) => {
+
+        console.log("");
+        console.log("######################################");
+        console.log("🟢🟢🟢 BOT ÇEVRİMİÇİ OLDU 🟢🟢🟢");
+        console.log("######################################");
+
+
+        console.log(
+            `>>> BOT: ${c.user.tag}`
+        );
+
+
+        console.log(
+            `>>> BOT ID: ${c.user.id}`
+        );
+
+
+        console.log(
+            `>>> SUNUCU SAYISI: ${client.guilds.cache.size}`
+        );
+
+
+        // Ses kanalına gir
+
+        await sesKanalinaGir();
+
+
+        // Her 30 saniyede kontrol et
+
+        setInterval(
+            async () => {
+
+                try {
+
+                    const connection =
+                        getVoiceConnection(GUILD_ID);
+
+
+                    if (!connection) {
+
+                        console.log(
+                            "⚠️ SES BAĞLANTISI YOK!"
+                        );
+
+                        console.log(
+                            ">>> TEKRAR BAĞLANILIYOR..."
+                        );
+
+
+                        await sesKanalinaGir();
+
+
+                    } else {
+
+                        console.log(
+                            "🟢 SES BAĞLANTISI AKTİF."
+                        );
+
+                    }
+
+                } catch (err) {
+
+                    console.error(
+                        "❌ SES KONTROL HATASI:",
+                        err
+                    );
+
+                }
+
+            },
+            30000
         );
 
     }
-});
+);
 
-ws.on('error', (err) => {
 
-    console.error('');
-    console.error('======================================');
-    console.error('❌❌❌ WEBSOCKET HATASI ❌❌❌');
-    console.error('======================================');
+// ==================================================
+// GİRİŞ
+// ==================================================
 
-    console.error(
-        'Hata:',
-        err.message
-    );
+console.log("");
+console.log("======================================");
+console.log(">>> DISCORD LOGIN BAŞLIYOR...");
+console.log("======================================");
 
-});
 
-ws.on('close', (code, reason) => {
-
-    console.error('');
-    console.error('======================================');
-    console.error('🔴 GATEWAY BAĞLANTISI KAPANDI');
-    console.error('======================================');
+if (!BOT_TOKEN) {
 
     console.error(
-        'Close kodu:',
-        code
+        "❌ BOT_TOKEN BULUNAMADI!"
     );
 
-    console.error(
-        'Sebep:',
-        reason.toString() || 'Belirtilmedi'
-    );
-
-});
-
-setTimeout(() => {
-
-    console.log('');
-    console.log('======================================');
-    console.log('>>> 30 SANİYELİK TEST SONUCU');
-    console.log('======================================');
+} else {
 
     console.log(
-        'WebSocket açıldı:',
-        ws.readyState === WebSocket.OPEN ? 'EVET' : 'HAYIR'
+        ">>> BOT_TOKEN bulundu."
     );
 
     console.log(
-        'Discord Hello geldi:',
-        helloAlindi ? 'EVET' : 'HAYIR'
+        ">>> Discord'a bağlanılıyor..."
     );
 
-    console.log(
-        'Discord Ready geldi:',
-        readyAlindi ? 'EVET' : 'HAYIR'
-    );
 
-}, 30000);
+    client.login(BOT_TOKEN)
+
+        .then(() => {
+
+            console.log(
+                "🟢 DISCORD LOGIN KOMUTU BAŞARILI!"
+            );
+
+        })
+
+        .catch((err) => {
+
+            console.error("");
+            console.error(
+                "❌ DISCORD LOGIN HATASI:"
+            );
+
+            console.error(err);
+
+        });
+
+}
